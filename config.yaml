@@ -1,0 +1,91 @@
+# ============================================================
+# config.yaml — Configuration globale du pipeline médical
+# ============================================================
+
+project:
+  name: "medical-dqv-pipeline"
+  version: "1.0.0"
+  description: "Pipeline de nettoyage et vérification qualité de données médicales"
+
+# --- Source de données ---
+scraper:
+  url: "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
+  mode: "static"          # static | dynamic
+  request_delay: 1.5      # secondes entre requêtes
+  timeout: 30             # timeout HTTP (s)
+  max_retries: 3
+  headless: true          # Selenium headless
+
+# --- Chemins des données ---
+paths:
+  raw_data:         "data/raw/medical_raw.csv"
+  anonymized_data:  "data/processed/medical_v1.0_anonymized.csv"
+  transformed_data: "data/processed/medical_v1.0_transformed.csv"
+  pipeline_pkl:     "data/processed/transformer_pipeline.pkl"
+  dqv_report_html:  "reports/dqv_report.html"
+  dqv_results_json: "reports/dqv_results.json"
+  anon_report_json: "reports/anonymization_report.json"
+  pipeline_log:     "reports/pipeline.log"
+  eda_dir:          "reports/"
+
+# --- Anonymisation ---
+anonymization:
+  k_anonymity: 3           # k minimum pour k-anonymity
+  strategy: "replace"      # replace | hash | drop
+  phi_direct:
+    - name
+    - nom
+    - prenom
+    - email
+    - phone
+    - telephone
+    - address
+    - adresse
+    - ssn
+    - nss
+    - nin
+    - ip_address
+    - patient_id
+    - mrn
+  phi_quasi:
+    - age
+    - gender
+    - sexe
+    - zip_code
+    - birth_date
+    - ethnicity
+
+# --- DQV (Data Quality Verification) ---
+dqv:
+  missing_threshold: 0.15       # Max 15% valeurs manquantes
+  duplicate_tolerance: 0        # Zéro doublon accepté
+  distribution_drift_threshold: 0.3
+  domain_rules:
+    age:               [0, 120]
+    blood_pressure:    [50, 250]
+    heart_rate:        [30, 220]
+    glucose:           [30, 600]
+    bmi:               [10, 70]
+    temperature:       [35, 42]
+    oxygen_saturation: [70, 100]
+
+# --- Transformation ---
+transformation:
+  outlier_factor: 1.5           # IQR × factor
+  outlier_strategy: "clip"      # clip | median
+  scaler_method: "standard"     # standard | minmax
+  max_ohe_cardinality: 5        # Max modalités pour OHE
+  date_extract_features: true
+
+# --- DVC ---
+dvc:
+  remote_name: "myremote"
+  remote_type: "gdrive"         # gdrive | s3 | gcs | local
+  version_tag: "v1.0-anonymized"
+  auto_push: false
+
+# --- Streamlit ---
+streamlit:
+  page_title: "Medical DQV Pipeline"
+  layout: "wide"
+  sidebar_state: "expanded"

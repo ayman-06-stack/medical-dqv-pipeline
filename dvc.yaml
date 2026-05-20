@@ -1,0 +1,76 @@
+# ============================================================
+# dvc.yaml — Définition du pipeline DVC
+# Rejouer avec : dvc repro
+# ============================================================
+
+stages:
+
+  scrape:
+    cmd: python src/scraper.py
+    deps:
+      - src/scraper.py
+      - config.yaml
+    outs:
+      - data/raw/medical_raw.csv
+    desc: "Collecte des données depuis la source URL"
+
+  anonymize:
+    cmd: python -c "
+      import pandas as pd;
+      import sys; sys.path.insert(0, 'src');
+      from anonymizer import MedicalAnonymizer;
+      df = pd.read_csv('data/raw/medical_raw.csv');
+      MedicalAnonymizer(k=3, strategy='replace',
+        output_path='data/processed/medical_v1.0_anonymized.csv',
+        report_path='reports/anonymization_report.json').run(df)
+      "
+    deps:
+      - src/anonymizer.py
+      - data/raw/medical_raw.csv
+      - config.yaml
+    outs:
+      - data/processed/medical_v1.0_anonymized.csv
+    metrics:
+      - reports/anonymization_report.json:
+          cache: false
+    desc: "Anonymisation PHI + k-anonymity"
+
+  dqv:
+    cmd: python -c "
+      import pandas as pd;
+      import sys; sys.path.insert(0, 'src');
+      from dqv import DataQualityVerifier, DQVConfig;
+      df = pd.read_csv('data/processed/medical_v1.0_anonymized.csv');
+      gate, _ = DataQualityVerifier(DQVConfig()).run(df);
+      sys.exit(0 if gate else 1)
+      "
+    deps:
+      - src/dqv.py
+      - data/processed/medical_v1.0_anonymized.csv
+      - config.yaml
+    metrics:
+      - reports/dqv_results.json:
+          cache: false
+    plots:
+      - reports/dqv_report.html:
+          cache: false
+    desc: "Vérification qualité + gate check"
+
+  transform:
+    cmd: python -c "
+      import pandas as pd;
+      import sys; sys.path.insert(0, 'src');
+      from transformer import MedicalTransformer;
+      df = pd.read_csv('data/processed/medical_v1.0_anonymized.csv');
+      t = MedicalTransformer();
+      result = t.fit_transform(df);
+      result.to_csv('data/processed/medical_v1.0_transformed.csv', index=False)
+      "
+    deps:
+      - src/transformer.py
+      - data/processed/medical_v1.0_anonymized.csv
+      - config.yaml
+    outs:
+      - data/processed/medical_v1.0_transformed.csv
+      - data/processed/transformer_pipeline.pkl
+    desc: "Encodage catégoriel + normalisation + feature engineering"

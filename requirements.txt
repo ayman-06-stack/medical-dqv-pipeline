@@ -1,0 +1,49 @@
+# ============================================================
+# requirements.txt — Medical DQV Pipeline (Python 3.13)
+# ============================================================
+
+# --- Core data ---
+pandas>=2.2.2
+numpy>=2.1.0
+
+# --- Scraping ---
+requests>=2.32.3
+beautifulsoup4>=4.12.3
+selenium>=4.21.0
+
+# --- Anonymisation ---
+faker>=25.2.0
+
+# --- Data Quality ---
+great-expectations>=1.0.0
+pandera>=0.20.0
+
+# --- Machine Learning / Transformation ---
+scikit-learn>=1.6.0
+joblib>=1.4.2
+
+# --- DVC ---
+dvc>=3.51.2
+dvc[gdrive]>=3.51.2
+
+# --- Streamlit & Visualisation ---
+streamlit>=1.35.0
+plotly>=5.22.0
+
+# --- CLI ---
+click>=8.1.7
+
+# --- EDA / Notebooks ---
+matplotlib>=3.9.0
+seaborn>=0.13.2
+scipy>=1.14.0
+jupytext>=1.16.2
+jupyter>=1.0.0
+
+# --- Tests ---
+pytest>=8.2.2
+pytest-cov>=5.0.0
+
+# --- Utilitaires ---
+pyyaml>=6.0.1
+python-dotenv>=1.0.1
