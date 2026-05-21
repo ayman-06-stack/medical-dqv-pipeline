@@ -5,6 +5,7 @@ Page Streamlit — Collecte & Anonymisation des données médicales.
 Permet de saisir une URL source, lancer le scraping et l'anonymisation.
 """
 
+import logging
 import sys
 import time
 from pathlib import Path
@@ -17,6 +18,30 @@ sys.path.insert(0, str(Path(__file__).parents[2] / "src"))
 
 from scraper import MedicalScraper, ScraperConfig
 from anonymizer import MedicalAnonymizer
+
+
+class StreamlitLogHandler(logging.Handler):
+    """Custom logging handler to redirect package logs to Streamlit session state logs."""
+    def __init__(self):
+        super().__init__()
+        self.setFormatter(logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", datefmt="%H:%M:%S"))
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if "collect_logs" in st.session_state:
+                st.session_state.collect_logs.append(msg)
+        except Exception:
+            self.handleError(record)
+
+
+@st.cache_resource
+def setup_streamlit_logging():
+    handler = StreamlitLogHandler()
+    for logger_name in ["scraper", "pipeline", "anonymizer"]:
+        l = logging.getLogger(logger_name)
+        l.setLevel(logging.INFO)
+        l.addHandler(handler)
 
 # ---------------------------------------------------------------------------
 # Config page
@@ -70,6 +95,7 @@ def _init():
             st.session_state[k] = v
 
 _init()
+setup_streamlit_logging()
 
 
 # ---------------------------------------------------------------------------
@@ -102,11 +128,20 @@ SAMPLE_DATASETS = {
         "heart-disease/processed.cleveland.data",
         "static",
     ),
-    "Diabetes (Kaggle CSV direct)": (
+    "Diabetes (Kaggle CSV Direct)": (
         "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv",
         "static",
     ),
-    "Custom URL…": ("", "static"),
+    "Breast Cancer (UCI)": (
+        "https://archive.ics.uci.edu/ml/machine-learning-databases/"
+        "breast-cancer/breast-cancer.data",
+        "static",
+    ),
+    "Healthcare Data (GitHub CSV)": (
+        "https://raw.githubusercontent.com/stedy/Healthcare-Data/main/healthcare_data.csv",
+        "static",
+    ),
+    "📁 Fichier CSV local…": ("", "static"),
 }
 
 
@@ -117,8 +152,14 @@ SAMPLE_DATASETS = {
 st.title("🔌 Étape 1 — Collecte & Anonymisation")
 st.markdown(
     "Saisissez l'URL d'une source de données médicales publique, "
-    "configurez les paramètres et lancez le pipeline de collecte."
+    "un chemin local vers un fichier CSV, configurez les paramètres et lancez le pipeline."
 )
+
+# 📌 Info Kaggle
+st.info("""
+**💡 Support automatique de Kaggle :** Vous pouvez simplement coller l'URL d'un dataset Kaggle public (ex: `kaggle.com/datasets/prasad22/healthcare-dataset`) dans le champ ci-dessous. Le scraper le téléchargera automatiquement !
+""")
+
 st.divider()
 
 # --- Sélection de la source ---
@@ -135,10 +176,10 @@ with col_left:
     preset_url, preset_mode = SAMPLE_DATASETS[preset]
 
     url_input = st.text_input(
-        "URL source",
+        "URL source ou chemin CSV local",
         value=preset_url,
-        placeholder="https://...",
-        help="Lien direct vers un CSV ou une page HTML avec tableau médical.",
+        placeholder="https://... ou C:/path/to/file.csv",
+        help="Lien direct vers un CSV/HTTP ou chemin local (ex: data/raw/mydata.csv)",
     )
     st.session_state.source_url = url_input
 
@@ -216,7 +257,16 @@ if run_btn and url_input:
             df_raw = scraper.run()
 
             if df_raw.empty:
-                st.error("❌ Scraping échoué : aucune donnée collectée. Vérifiez l'URL.")
+                st.error(
+                    "❌ **Scraping échoué — Aucune donnée collectée.**\n\n"
+                    "Causes possibles :\n"
+                    "• URL invalide ou inaccessible\n"
+                    "• URL Kaggle (nécessite authentification)\n"
+                    "• Chemin local inexistant\n"
+                    "• Serveur indisponible ou timeout\n"
+                    "• Format non reconnu (CSV/HTML)\n\n"
+                    "→ Vérifiez l'URL/chemin et réessayez."
+                )
                 _log("ERREUR : aucune donnée collectée")
                 st.stop()
 
@@ -225,7 +275,7 @@ if run_btn and url_input:
             progress.progress(40, text="Scraping terminé…")
 
         except Exception as e:
-            st.error(f"❌ Erreur scraping : {e}")
+            st.error(f"❌ **Erreur scraping** : {str(e)}")
             _log(f"ERREUR scraping : {e}")
             st.stop()
 

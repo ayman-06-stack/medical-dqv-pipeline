@@ -3,6 +3,7 @@ scraper.py
 ----------
 Module de collecte de données médicales via web scraping.
 Supporte BeautifulSoup (pages statiques) et Selenium (pages dynamiques).
+Gère aussi les fichiers CSV locaux.
 """
 
 import logging
@@ -11,6 +12,7 @@ import csv
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional
+from urllib.parse import urlparse
 
 import pandas as pd
 import requests
@@ -32,6 +34,30 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
 )
 logger = logging.getLogger("scraper")
+
+
+# ---------------------------------------------------------------------------
+# Fonctions utilitaires
+# ---------------------------------------------------------------------------
+
+def is_valid_url(url: str) -> bool:
+    """Valide si une URL est bien formée."""
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except Exception:
+        return False
+
+
+def is_kaggle_url(url: str) -> bool:
+    """Détecte si l'URL est un lien Kaggle (non accessible directement)."""
+    return "kaggle.com/datasets" in url.lower()
+
+
+def is_local_file(path: str) -> bool:
+    """Vérifie si le chemin est un fichier local CSV."""
+    p = Path(path)
+    return p.exists() and p.suffix.lower() == ".csv"
 
 
 # ---------------------------------------------------------------------------
@@ -72,6 +98,22 @@ class StaticScraper:
 
     def _fetch_page(self, url: str) -> Optional[BeautifulSoup]:
         """Télécharge une page HTML avec gestion des retries."""
+        # Validation préalable
+        if is_kaggle_url(url):
+            err_msg = (
+                f"❌ URL Kaggle non supportée en mode HTML statique : {url}\n"
+                f"   → Kaggle demande une authentification\n"
+                f"   → Solution : utiliser le mode automatique Kaggle ou trouver une URL brute"
+            )
+            logger.error(err_msg)
+            raise ValueError(err_msg)
+
+        if not is_valid_url(url):
+            err_msg = f"❌ URL invalide ou malformée : {url}"
+            logger.error(err_msg)
+            raise ValueError(err_msg)
+
+        last_ex = None
         for attempt in range(1, self.config.max_retries + 1):
             try:
                 logger.info(f"Requête GET [{attempt}/{self.config.max_retries}] → {url}")
@@ -80,17 +122,57 @@ class StaticScraper:
                 return BeautifulSoup(response.text, "html.parser")
             except requests.exceptions.RequestException as e:
                 logger.warning(f"Erreur requête (tentative {attempt}) : {e}")
+                last_ex = e
                 if attempt < self.config.max_retries:
                     time.sleep(self.config.request_delay * attempt)
         logger.error(f"Impossible de charger : {url}")
+        if last_ex:
+            raise last_ex
+        return None
+
+    def _fetch_raw_text(self, url: str) -> Optional[str]:
+        """Télécharge le contenu brut (texte/CSV) d'une URL."""
+        last_ex = None
+        for attempt in range(1, self.config.max_retries + 1):
+            try:
+                logger.info(f"Requête GET (texte brut) [{attempt}] → {url}")
+                response = self.session.get(url, timeout=self.config.timeout)
+                response.raise_for_status()
+                return response.text
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Erreur requête (tentative {attempt}) : {e}")
+                last_ex = e
+                if attempt < self.config.max_retries:
+                    time.sleep(self.config.request_delay * attempt)
+        if last_ex:
+            raise last_ex
         return None
 
     def scrape(self) -> pd.DataFrame:
         """
-        Scrape la page et extrait les données tabulaires médicales.
-        Cherche en priorité les balises <table>, sinon extrait les listes.
+        Scrape la source (HTML page ou fichier brut CSV/texte).
+        Auto-détecte le format et applique le parser approprié.
         """
-        soup = self._fetch_page(self.config.url)
+        url = self.config.url
+        
+        # Cas 1 : URL pointe vers un fichier CSV/data brut (pas HTML)
+        if url.lower().endswith(('.csv', '.data', '.txt')):
+            logger.info(f"Détecté format fichier brut : {url}")
+            text = self._fetch_raw_text(url)
+            if text:
+                try:
+                    # Essayer pandas read_csv sur le texte
+                    from io import StringIO
+                    df = pd.read_csv(StringIO(text), sep=None, engine='python')
+                    if not df.empty:
+                        logger.info(f"✅ Fichier brut parsé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
+                        return df
+                except Exception as e:
+                    logger.warning(f"Erreur parsing CSV : {e}")
+            return pd.DataFrame()
+        
+        # Cas 2 : URL pointe vers une page HTML
+        soup = self._fetch_page(url)
         if soup is None:
             return pd.DataFrame()
 
@@ -98,11 +180,28 @@ class StaticScraper:
         tables = soup.find_all("table")
         if tables:
             logger.info(f"{len(tables)} tableau(x) trouvé(s) — extraction du premier")
-            df = pd.read_html(str(tables[0]))[0]
-            logger.info(f"Données extraites : {df.shape[0]} lignes × {df.shape[1]} colonnes")
-            return df
+            try:
+                df = pd.read_html(str(tables[0]))[0]
+                logger.info(f"✅ Tableau HTML parsé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
+                return df
+            except Exception as e:
+                logger.warning(f"Erreur parsing tableau HTML : {e}")
 
-        # Fallback : extraction générique depuis les listes/divs
+        # Fallback 1 : Essayer de charger comme CSV si contient un pattern CSV
+        try:
+            text = soup.get_text()
+            # Si le texte contient des lignes séparées, le traiter comme CSV
+            if "\n" in text and ("," in text or "\t" in text):
+                logger.info("Détecté format texte délimité — tentative parsing CSV")
+                from io import StringIO
+                df = pd.read_csv(StringIO(text), sep=None, engine='python')
+                if not df.empty:
+                    logger.info(f"✅ CSV texte parsé : {df.shape[0]} lignes × {df.shape[1]} colonnes")
+                    return df
+        except Exception as e:
+            logger.warning(f"Erreur parsing CSV texte : {e}")
+
+        # Fallback 2 : extraction générique depuis les listes/divs
         logger.warning("Aucun tableau trouvé — extraction générique")
         return self._extract_generic(soup)
 
@@ -173,27 +272,120 @@ class DynamicScraper:
 
 
 # ---------------------------------------------------------------------------
+# Scraper Kaggle (kagglehub)
+# ---------------------------------------------------------------------------
+
+class KaggleScraper:
+    """Scraper pour télécharger des datasets depuis Kaggle via kagglehub."""
+
+    def __init__(self, config: ScraperConfig):
+        self.config = config
+
+    def scrape(self) -> pd.DataFrame:
+        """Télécharge le dataset public Kaggle et le charge en DataFrame."""
+        url = self.config.url
+        logger.info(f"Détection d'un dataset Kaggle : {url}")
+
+        # Regex pour extraire owner/dataset
+        import re
+        match = re.search(r"kaggle\.com/datasets/([^/]+)/([^/?#\s]+)", url)
+        if not match:
+            err_msg = f"URL Kaggle invalide ou non supportée : {url}"
+            logger.error(err_msg)
+            raise ValueError(err_msg)
+
+        owner = match.group(1)
+        dataset_name = match.group(2)
+        dataset_handle = f"{owner}/{dataset_name}"
+        logger.info(f"Identifiant Kaggle extrait : {dataset_handle}")
+
+        try:
+            import kagglehub
+        except ImportError as e:
+            err_msg = "La bibliothèque 'kagglehub' n'est pas installée. Lancez : pip install kagglehub"
+            logger.error(err_msg)
+            raise ImportError(err_msg) from e
+
+        try:
+            logger.info("Téléchargement du dataset avec kagglehub...")
+            downloaded_dir = kagglehub.dataset_download(dataset_handle)
+            logger.info(f"Téléchargement réussi dans : {downloaded_dir}")
+
+            downloaded_path = Path(downloaded_dir)
+            csv_files = list(downloaded_path.glob("**/*.csv"))
+            if not csv_files:
+                err_msg = f"Aucun fichier CSV trouvé dans le dossier téléchargé : {downloaded_dir}"
+                logger.error(err_msg)
+                raise FileNotFoundError(err_msg)
+
+            # Prendre le premier CSV trouvé
+            csv_file = csv_files[0]
+            logger.info(f"Lecture du fichier CSV : {csv_file.name}")
+            df = pd.read_csv(csv_file)
+            return df
+
+        except Exception as e:
+            logger.error(f"Erreur lors du téléchargement Kaggle : {e}")
+            raise e
+
+
+# ---------------------------------------------------------------------------
 # Classe principale — point d'entrée public
 # ---------------------------------------------------------------------------
 
 class MedicalScraper:
     """
     Orchestrateur du scraping médical.
-    Choisit automatiquement entre StaticScraper et DynamicScraper
-    selon le mode défini dans ScraperConfig.
+    Choisit automatiquement entre KaggleScraper, StaticScraper et DynamicScraper.
     """
 
     def __init__(self, config: ScraperConfig):
+        # Normaliser l'URL si ce n'est pas un fichier local et que ça ne commence pas par un protocole
+        url = config.url.strip()
+        if not is_local_file(url) and not url.lower().startswith(("http://", "https://")):
+            url = "https://" + url
+            config.url = url
+
         self.config = config
-        self._scraper = (
-            DynamicScraper(config)
-            if config.mode == "dynamic"
-            else StaticScraper(config)
-        )
+        if is_kaggle_url(config.url):
+            self._scraper = KaggleScraper(config)
+        else:
+            self._scraper = None
 
     def run(self) -> pd.DataFrame:
-        """Lance le scraping et sauvegarde les données brutes."""
-        logger.info(f"Démarrage du scraping [{self.config.mode}] : {self.config.url}")
+        """Lance le scraping approprié selon la source et sauvegarde les données."""
+        url_or_path = self.config.url
+        
+        # Cas 1 : Fichier CSV local
+        if is_local_file(url_or_path):
+            logger.info(f"Source locale détectée : {url_or_path}")
+            return self._load_local_csv(url_or_path)
+        
+        # Cas 2 : URL Kaggle
+        if is_kaggle_url(url_or_path):
+            logger.info("Traitement d'une URL Kaggle via KaggleScraper")
+            self._scraper = KaggleScraper(self.config)
+            df = self._scraper.scrape()
+            if df.empty:
+                logger.error("Aucune donnée collectée depuis Kaggle — arrêt du pipeline")
+                return df
+            self._save(df)
+            return df
+        
+        # Cas 3 : URL HTTP/HTTPS standard
+        if not is_valid_url(url_or_path):
+            err_msg = f"❌ URL invalide : {url_or_path}"
+            logger.error(err_msg)
+            raise ValueError(err_msg)
+        
+        logger.info(f"Démarrage du scraping [{self.config.mode}] : {url_or_path}")
+        
+        self._scraper = (
+            DynamicScraper(self.config)
+            if self.config.mode == "dynamic"
+            else StaticScraper(self.config)
+        )
+        
         df = self._scraper.scrape()
 
         if df.empty:
@@ -202,6 +394,17 @@ class MedicalScraper:
 
         self._save(df)
         return df
+
+    def _load_local_csv(self, path: str) -> pd.DataFrame:
+        """Charge un fichier CSV local."""
+        try:
+            df = pd.read_csv(path)
+            logger.info(f"CSV chargé : {path} ({len(df)} lignes × {len(df.columns)} colonnes)")
+            self._save(df)
+            return df
+        except Exception as e:
+            logger.error(f"Erreur chargement CSV {path} : {e}")
+            raise e
 
     def _save(self, df: pd.DataFrame) -> None:
         """Sauvegarde le DataFrame brut en CSV."""

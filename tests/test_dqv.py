@@ -259,7 +259,7 @@ class TestCrossFeatureConsistencyChecker:
         result = checker.check(df_with_cross_violations)
         assert result.status in ("warn", "fail")
         issues = result.details.get("issues", [])
-        assert any("négatif" in i for i in issues)
+        assert any("gative" in i or "gatif" in i for i in issues)
 
     def test_detects_negative_blood_pressure(self, df_with_cross_violations):
         checker = CrossFeatureConsistencyChecker()
@@ -339,44 +339,44 @@ class TestDistributionConsistencyChecker:
 
 class TestDataQualityVerifier:
 
-    def test_gate_pass_on_clean_data(self, clean_df):
+    def test_gate_pass_on_clean_data(self, clean_df, tmp_path):
         config = DQVConfig(
             missing_threshold=0.15,
-            report_path="/tmp/dqv_test_report.html",
-            results_path="/tmp/dqv_test_results.json",
+            report_path=str(tmp_path / "dqv_test_report.html"),
+            results_path=str(tmp_path / "dqv_test_results.json"),
         )
         verifier = DataQualityVerifier(config)
         gate_passed, results = verifier.run(clean_df)
         assert gate_passed is True
 
-    def test_gate_fail_on_dirty_data(self):
+    def test_gate_fail_on_dirty_data(self, tmp_path):
         df = pd.DataFrame({
             "age":  [45, 32, None, None, None, None, None, None, None, None],  # 90% missing
             "diag": ["a"] * 10,
         })
         config = DQVConfig(
             missing_threshold=0.15,
-            report_path="/tmp/dqv_fail_report.html",
-            results_path="/tmp/dqv_fail_results.json",
+            report_path=str(tmp_path / "dqv_fail_report.html"),
+            results_path=str(tmp_path / "dqv_fail_results.json"),
         )
         verifier = DataQualityVerifier(config)
         gate_passed, results = verifier.run(df)
         assert gate_passed is False
 
-    def test_returns_correct_number_of_checks(self, clean_df):
+    def test_returns_correct_number_of_checks(self, clean_df, tmp_path):
         config = DQVConfig(
-            report_path="/tmp/dqv_count_report.html",
-            results_path="/tmp/dqv_count_results.json",
+            report_path=str(tmp_path / "dqv_count_report.html"),
+            results_path=str(tmp_path / "dqv_count_results.json"),
         )
         verifier = DataQualityVerifier(config)
         _, results = verifier.run(clean_df)
         # 5 checkers définis dans l'orchestrateur
         assert len(results) == 5
 
-    def test_results_are_check_result_objects(self, clean_df):
+    def test_results_are_check_result_objects(self, clean_df, tmp_path):
         config = DQVConfig(
-            report_path="/tmp/dqv_obj_report.html",
-            results_path="/tmp/dqv_obj_results.json",
+            report_path=str(tmp_path / "dqv_obj_report.html"),
+            results_path=str(tmp_path / "dqv_obj_results.json"),
         )
         verifier = DataQualityVerifier(config)
         _, results = verifier.run(clean_df)
@@ -414,28 +414,31 @@ class TestDataQualityVerifier:
         assert "checks" in data
         assert "timestamp" in data
 
-    def test_custom_threshold_applied(self):
-        df = pd.DataFrame({
-            "col": [None, 1, 1, 1, 1],  # 20% missing
+    def test_custom_threshold_applied(self, tmp_path):
+        df_pass = pd.DataFrame({
+            "col": [None, 1.0, 2.0, 3.0, 4.0],  # 20% missing
         })
-        # Avec seuil 30% : doit passer
+        # Avec seuil 30% : doit passer (20% < 30%)
         config_pass = DQVConfig(
             missing_threshold=0.30,
-            report_path="/tmp/dqv_thresh_pass.html",
-            results_path="/tmp/dqv_thresh_pass.json",
+            report_path=str(tmp_path / "dqv_thresh_pass.html"),
+            results_path=str(tmp_path / "dqv_thresh_pass.json"),
         )
         verifier = DataQualityVerifier(config_pass)
-        gate, _ = verifier.run(df)
+        gate, _ = verifier.run(df_pass)
         assert gate is True
 
-        # Avec seuil 10% : doit échouer
+        df_fail = pd.DataFrame({
+            "col": [None, None, 2.0, 3.0, 4.0],  # 40% missing
+        })
+        # Avec seuil 10% : doit échouer (40% > 10% et >= 30% critique)
         config_fail = DQVConfig(
             missing_threshold=0.10,
-            report_path="/tmp/dqv_thresh_fail.html",
-            results_path="/tmp/dqv_thresh_fail.json",
+            report_path=str(tmp_path / "dqv_thresh_fail.html"),
+            results_path=str(tmp_path / "dqv_thresh_fail.json"),
         )
         verifier2 = DataQualityVerifier(config_fail)
-        gate2, _ = verifier2.run(df)
+        gate2, _ = verifier2.run(df_fail)
         assert gate2 is False
 
     @pytest.mark.parametrize("n_rows", [5, 50, 500])

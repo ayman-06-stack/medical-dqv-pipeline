@@ -1,0 +1,32 @@
+{
+  "input_rows": 767,
+  "input_columns": [
+    "6",
+    "148",
+    "72",
+    "35",
+    "0",
+    "33.6",
+    "0.627",
+    "50",
+    "1"
+  ],
+  "phi_direct_columns": [],
+  "quasi_identifier_columns": [],
+  "k_anonymity_satisfied": true,
+  "k_value": 2,
+  "rows_suppressed_k_anonymity": 0,
+  "output_rows": 767,
+  "output_columns": [
+    "6",
+    "148",
+    "72",
+    "35",
+    "0",
+    "33.6",
+    "0.627",
+    "50",
+    "1"
+  ],
+  "anonymization_strategy": "replace"
+}

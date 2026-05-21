@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Rapport DQV — Medical Pipeline</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 860px;
+            margin: 40px auto; padding: 0 20px; color: #212529; }
+    h1 { font-size: 24px; margin-bottom: 4px; }
+    .meta { color: #6c757d; font-size: 13px; margin-bottom: 28px; }
+    .summary { display: flex; gap: 16px; margin-bottom: 28px; }
+    .kpi { flex: 1; padding: 16px; border-radius: 8px; text-align: center; }
+    .kpi-val { font-size: 28px; font-weight: 700; }
+    .kpi-label { font-size: 12px; margin-top: 4px; }
+    .gate { padding: 14px 20px; border-radius: 8px; font-size: 18px;
+             font-weight: 700; text-align: center; margin-bottom: 28px; }
+    h2 { font-size: 18px; border-bottom: 1px solid #dee2e6;
+          padding-bottom: 8px; margin-bottom: 16px; }
+    details pre { background: #f8f9fa; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Rapport DQV — Medical Data Pipeline</h1>
+  <p class="meta">
+    Généré le 21/05/2026 à 09:57:02 |
+    Dataset : 1338 lignes × 7 colonnes
+  </p>
+
+  <div class="gate" style="background:#d4edda;color:#155724">
+    Gate Check : ✅ ACCEPTÉ
+  </div>
+
+  <div class="summary">
+    <div class="kpi" style="background:#d4edda">
+      <div class="kpi-val" style="color:#155724">4</div>
+      <div class="kpi-label" style="color:#155724">Passed</div>
+    </div>
+    <div class="kpi" style="background:#fff3cd">
+      <div class="kpi-val" style="color:#856404">1</div>
+      <div class="kpi-label" style="color:#856404">Warnings</div>
+    </div>
+    <div class="kpi" style="background:#f8d7da">
+      <div class="kpi-val" style="color:#721c24">0</div>
+      <div class="kpi-label" style="color:#721c24">Failed</div>
+    </div>
+    <div class="kpi" style="background:#e2e3e5">
+      <div class="kpi-val" style="color:#383d41">5</div>
+      <div class="kpi-label" style="color:#383d41">Total checks</div>
+    </div>
+  </div>
+
+  <h2>Détail des vérifications</h2>
+  
+            <div style="background:#d4edda;border-left:4px solid #155724;
+                        padding:14px 16px;margin-bottom:12px;border-radius:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#155724">✅ Missing Value Threshold</strong>
+                <span style="font-size:12px;background:#155724;color:white;
+                             padding:2px 8px;border-radius:4px">PASS</span>
+              </div>
+              <p style="margin:6px 0 0;color:#155724;font-size:13px">Toutes les colonnes < 15% manquant (max: 0.0%)</p>
+              
+                <details style="margin-top:8px">
+                  <summary style="cursor:pointer;font-size:12px;color:#155724">
+                    Voir les détails
+                  </summary>
+                  <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
+{
+  "age": 0.0,
+  "sex": 0.0,
+  "bmi": 0.0,
+  "children": 0.0,
+  "smoker": 0.0,
+  "region": 0.0,
+  "charges": 0.0
+}
+                  </pre>
+                </details>
+            </div>
+            <div style="background:#fff3cd;border-left:4px solid #856404;
+                        padding:14px 16px;margin-bottom:12px;border-radius:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#856404">⚠️ Duplicate Record Check</strong>
+                <span style="font-size:12px;background:#856404;color:white;
+                             padding:2px 8px;border-radius:4px">WARN</span>
+              </div>
+              <p style="margin:6px 0 0;color:#856404;font-size:13px">1 doublon(s) détecté(s) (0.1% du dataset)</p>
+              
+                <details style="margin-top:8px">
+                  <summary style="cursor:pointer;font-size:12px;color:#856404">
+                    Voir les détails
+                  </summary>
+                  <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
+{
+  "duplicate_count": 1,
+  "duplicate_pct": 0.07
+}
+                  </pre>
+                </details>
+            </div>
+            <div style="background:#d4edda;border-left:4px solid #155724;
+                        padding:14px 16px;margin-bottom:12px;border-radius:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#155724">✅ Domain/Type Validity Check</strong>
+                <span style="font-size:12px;background:#155724;color:white;
+                             padding:2px 8px;border-radius:4px">PASS</span>
+              </div>
+              <p style="margin:6px 0 0;color:#155724;font-size:13px">Toutes les valeurs sont dans leur domaine valide</p>
+              
+            </div>
+            <div style="background:#d4edda;border-left:4px solid #155724;
+                        padding:14px 16px;margin-bottom:12px;border-radius:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#155724">✅ Cross-Feature Consistency Check</strong>
+                <span style="font-size:12px;background:#155724;color:white;
+                             padding:2px 8px;border-radius:4px">PASS</span>
+              </div>
+              <p style="margin:6px 0 0;color:#155724;font-size:13px">Toutes les règles de cohérence inter-features sont satisfaites</p>
+              
+            </div>
+            <div style="background:#d4edda;border-left:4px solid #155724;
+                        padding:14px 16px;margin-bottom:12px;border-radius:6px">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="color:#155724">✅ Distribution Consistency Check</strong>
+                <span style="font-size:12px;background:#155724;color:white;
+                             padding:2px 8px;border-radius:4px">PASS</span>
+              </div>
+              <p style="margin:6px 0 0;color:#155724;font-size:13px">Distributions statistiquement stables</p>
+              
+                <details style="margin-top:8px">
+                  <summary style="cursor:pointer;font-size:12px;color:#155724">
+                    Voir les détails
+                  </summary>
+                  <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
+{
+  "bmi": {
+    "mean": 30.663,
+    "std": 6.098,
+    "skewness": 0.284,
+    "cv": 0.199
+  },
+  "children": {
+    "mean": 1.095,
+    "std": 1.205,
+    "skewness": 0.938,
+    "cv": 1.101
+  },
+  "charges": {
+    "mean": 13270.422,
+    "std": 12110.011,
+    "skewness": 1.516,
+    "cv": 0.913
+  }
+}
+                  </pre>
+                </details>
+            </div>
+</body>
+</html>

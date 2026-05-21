@@ -205,8 +205,7 @@ class TestKAnonymizer:
     def test_generalizes_numeric_columns(self, sample_df):
         k_anon = KAnonymizer(k=2)
         result = k_anon.fit_transform(sample_df, ["age"])
-        # Après généralisation, "age" doit contenir des intervalles (strings)
-        assert result["age"].dtype == object or str(result["age"].dtype).startswith("object")
+        assert pd.api.types.is_string_dtype(result["age"])
 
     def test_no_quasi_identifiers(self, sample_df):
         k_anon = KAnonymizer(k=3)

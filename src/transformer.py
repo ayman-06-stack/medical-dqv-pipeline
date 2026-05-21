@@ -105,7 +105,8 @@ class DateFormatter(BaseEstimator, TransformerMixin):
                     X[f"{col}_year"] = X[col].dt.year
                     X[f"{col}_month"] = X[col].dt.month
                     X[f"{col}_dayofweek"] = X[col].dt.dayofweek
-                X[col] = X[col].astype(str)
+                # Convertir en chaîne de caractères mais conserver np.nan pour l'imputeur
+                X[col] = X[col].astype(str).replace("NaT", np.nan)
                 logger.info(f"Date formatée + features extraites : '{col}'")
             except Exception as e:
                 logger.warning(f"Impossible de parser la date '{col}' : {e}")
@@ -202,10 +203,10 @@ class CategoricalEncoder(BaseEstimator, TransformerMixin):
 
         for col, le in self._label_encoders.items():
             if col in X.columns:
-                # Gérer les labels inconnus (transform robuste)
-                X[col] = X[col].astype(str).apply(
-                    lambda v: le.transform([v])[0] if v in le.classes_ else -1
-                )
+                # Créer un dictionnaire pour le mapping rapide : classe -> label
+                mapping = {cl: i for i, cl in enumerate(le.classes_)}
+                # Mapper la série : si absent, mettre -1
+                X[col] = X[col].astype(str).map(mapping).fillna(-1).astype(int)
 
         return X
 
@@ -263,8 +264,8 @@ class MedicalTransformer:
     ):
         self.pipeline_path = pipeline_path
         self._pipeline = Pipeline([
-            ("imputer",  MissingValueImputer()),
             ("dates",    DateFormatter(extract_features=True)),
+            ("imputer",  MissingValueImputer()),
             ("outliers", OutlierHandler(factor=outlier_factor, strategy="clip")),
             ("encoder",  CategoricalEncoder(max_ohe_cardinality=max_ohe_cardinality)),
             ("scaler",   FeatureScaler(method=scaler_method)),

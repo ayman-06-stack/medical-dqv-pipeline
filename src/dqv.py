@@ -454,7 +454,7 @@ class DataQualityVerifier:
             },
             "checks": [r.to_dict() for r in results],
         }
-        output.write_text(json.dumps(data, indent=2, default=str, ensure_ascii=False))
+        output.write_text(json.dumps(data, indent=2, default=str, ensure_ascii=False), encoding="utf-8")
         logger.info(f"Résultats DQV JSON → {output}")
 
 

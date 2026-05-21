@@ -1,0 +1,116 @@
+{
+  "timestamp": "2026-05-20T16:51:29.254774",
+  "gate_passed": true,
+  "summary": {
+    "pass": 5,
+    "warn": 0,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "name": "Missing Value Threshold",
+      "status": "pass",
+      "message": "Toutes les colonnes < 15% manquant (max: 0.0%)",
+      "value": 0.0,
+      "threshold": 0.15,
+      "details": {
+        "6": 0.0,
+        "148": 0.0,
+        "72": 0.0,
+        "35": 0.0,
+        "0": 0.0,
+        "33.6": 0.0,
+        "0.627": 0.0,
+        "50": 0.0,
+        "1": 0.0
+      }
+    },
+    {
+      "name": "Duplicate Record Check",
+      "status": "pass",
+      "message": "Aucun doublon détecté",
+      "value": 0,
+      "threshold": null,
+      "details": {}
+    },
+    {
+      "name": "Domain/Type Validity Check",
+      "status": "pass",
+      "message": "Toutes les valeurs sont dans leur domaine valide",
+      "value": null,
+      "threshold": null,
+      "details": {}
+    },
+    {
+      "name": "Cross-Feature Consistency Check",
+      "status": "pass",
+      "message": "Toutes les règles de cohérence inter-features sont satisfaites",
+      "value": null,
+      "threshold": null,
+      "details": {}
+    },
+    {
+      "name": "Distribution Consistency Check",
+      "status": "pass",
+      "message": "Distributions statistiquement stables",
+      "value": null,
+      "threshold": null,
+      "details": {
+        "6": {
+          "mean": 3.842,
+          "std": 3.371,
+          "skewness": 0.904,
+          "cv": 0.877
+        },
+        "148": {
+          "mean": 120.859,
+          "std": 31.978,
+          "skewness": 0.176,
+          "cv": 0.265
+        },
+        "72": {
+          "mean": 69.102,
+          "std": 19.368,
+          "skewness": -1.842,
+          "cv": 0.28
+        },
+        "35": {
+          "mean": 20.518,
+          "std": 15.954,
+          "skewness": 0.112,
+          "cv": 0.778
+        },
+        "0": {
+          "mean": 79.904,
+          "std": 115.283,
+          "skewness": 2.271,
+          "cv": 1.443
+        },
+        "33.6": {
+          "mean": 31.99,
+          "std": 7.889,
+          "skewness": -0.428,
+          "cv": 0.247
+        },
+        "0.627": {
+          "mean": 0.472,
+          "std": 0.331,
+          "skewness": 1.921,
+          "cv": 0.703
+        },
+        "50": {
+          "mean": 33.219,
+          "std": 11.752,
+          "skewness": 1.135,
+          "cv": 0.354
+        },
+        "1": {
+          "mean": 0.348,
+          "std": 0.477,
+          "skewness": 0.639,
+          "cv": 1.369
+        }
+      }
+    }
+  ]
+}

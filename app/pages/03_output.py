@@ -126,8 +126,8 @@ st.markdown(
 st.divider()
 
 # --- Chargement des données ---
-df_anon = st.session_state.df_anonymized or _load_df("data/processed/medical_v1.0_anonymized.csv")
-df_trans = st.session_state.df_transformed or _load_df("data/processed/medical_v1.0_transformed.csv")
+df_anon = st.session_state.df_anonymized if st.session_state.df_anonymized is not None else _load_df("data/processed/medical_v1.0_anonymized.csv")
+df_trans = st.session_state.df_transformed if st.session_state.df_transformed is not None else _load_df("data/processed/medical_v1.0_transformed.csv")
 gate_ok = st.session_state.gate_passed
 dqv_data = _load_dqv_results()
 anon_report = _load_anon_report()

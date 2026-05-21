@@ -1,0 +1,30 @@
+{
+  "input_rows": 1338,
+  "input_columns": [
+    "age",
+    "sex",
+    "bmi",
+    "children",
+    "smoker",
+    "region",
+    "charges"
+  ],
+  "phi_direct_columns": [],
+  "quasi_identifier_columns": [
+    "age"
+  ],
+  "k_anonymity_satisfied": true,
+  "k_value": 3,
+  "rows_suppressed_k_anonymity": 0,
+  "output_rows": 1338,
+  "output_columns": [
+    "age",
+    "sex",
+    "bmi",
+    "children",
+    "smoker",
+    "region",
+    "charges"
+  ],
+  "anonymization_strategy": "replace"
+}

@@ -8,13 +8,24 @@ project:
   description: "Pipeline de nettoyage et vérification qualité de données médicales"
 
 # --- Source de données ---
+# IMPORTANT: Les URLs Kaggle (kaggle.com/datasets/...) ne sont PAS supportées directement
+# car elles demandent une authentification. Options :
+#   1. Utiliser une URL publique directe (CSV brut ou page HTML)
+#   2. Télécharger manuellement depuis Kaggle → pointer vers le fichier local
+#   3. Utiliser l'un des datasets UCI pré-configurés ci-dessous
+#
+# URLs de datasets publics recommandés :
+#   - UCI Heart Disease: https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data
+#   - Pima Diabetes: https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv
+#   - UCI Breast Cancer: https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer/breast-cancer.data
+#   - GitHub Healthcare: https://raw.githubusercontent.com/stedy/Healthcare-Data/main/healthcare_data.csv
 scraper:
   url: "https://archive.ics.uci.edu/ml/machine-learning-databases/heart-disease/processed.cleveland.data"
-  mode: "static"          # static | dynamic
-  request_delay: 1.5      # secondes entre requêtes
-  timeout: 30             # timeout HTTP (s)
-  max_retries: 3
-  headless: true          # Selenium headless
+  mode: "static"          # static (HTTP/CSV) | dynamic (Selenium pour pages JS)
+  request_delay: 1.5      # délai entre requêtes (secondes)
+  timeout: 30             # timeout HTTP (secondes)
+  max_retries: 3          # tentatives max si erreur réseau
+  headless: true          # mode headless pour Selenium
 
 # --- Chemins des données ---
 paths:
@@ -30,12 +41,14 @@ paths:
 
 # --- Anonymisation ---
 anonymization:
-  k_anonymity: 3           # k minimum pour k-anonymity
-  strategy: "replace"      # replace | hash | drop
-  phi_direct:
+  k_anonymity: 3           # k minimum pour k-anonymity (plus élevé = plus de suppression)
+  strategy: "replace"      # replace (synthétique Faker) | hash (HMAC) | drop (suppression)
+  phi_direct:              # Identifiants directs (toujours supprimés/remplacés)
     - name
     - nom
     - prenom
+    - first_name
+    - last_name
     - email
     - phone
     - telephone
@@ -47,7 +60,7 @@ anonymization:
     - ip_address
     - patient_id
     - mrn
-  phi_quasi:
+  phi_quasi:               # Quasi-identifiants (généralisés pour k-anonymity)
     - age
     - gender
     - sexe
@@ -57,10 +70,10 @@ anonymization:
 
 # --- DQV (Data Quality Verification) ---
 dqv:
-  missing_threshold: 0.15       # Max 15% valeurs manquantes
-  duplicate_tolerance: 0        # Zéro doublon accepté
-  distribution_drift_threshold: 0.3
-  domain_rules:
+  missing_threshold: 0.15       # Alerte si > 15% valeurs manquantes par colonne
+  duplicate_tolerance: 0        # Nombre de doublons tolérés (0 = aucun)
+  distribution_drift_threshold: 0.3  # Seuil de drift de distribution
+  domain_rules:                 # Intervalles valides pour les métriques médicales
     age:               [0, 120]
     blood_pressure:    [50, 250]
     heart_rate:        [30, 220]

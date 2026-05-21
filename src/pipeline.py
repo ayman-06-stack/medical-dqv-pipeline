@@ -183,9 +183,12 @@ class MedicalPipeline:
                 gate_passed=gate_passed,
                 output_path=self.config.transformed_path,
                 version_tag=version_tag,
-                duration_seconds=duration,
             )
-            print(result.summary())
+            try:
+                print(result.summary())
+            except UnicodeEncodeError:
+                encoded = result.summary().encode(sys.stdout.encoding or 'ascii', errors='replace')
+                print(encoded.decode(sys.stdout.encoding or 'ascii'))
             return result
 
         except Exception as e:

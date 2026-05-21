@@ -134,19 +134,70 @@ class DVCManager:
     # Opérations sur les fichiers
     # -----------------------------------------------------------------------
 
+    def _is_managed_by_dvc_yaml(self, file_path: str) -> bool:
+        """Vérifie si le fichier est géré comme sortie (out) dans dvc.yaml."""
+        dvc_yaml_path = Path(self.repo_path) / "dvc.yaml"
+        if not dvc_yaml_path.exists():
+            return False
+        try:
+            import yaml
+            with open(dvc_yaml_path, encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+            if not data or "stages" not in data:
+                return False
+            
+            # Normaliser le chemin recherché pour comparaison (chemin relatif par rapport au repo)
+            search_path = Path(file_path).resolve()
+            repo_path = Path(self.repo_path).resolve()
+            try:
+                rel_path = search_path.relative_to(repo_path)
+            except ValueError:
+                # Le fichier n'est pas dans le repo
+                return False
+            
+            rel_path_str = str(rel_path).replace("\\", "/")
+            
+            for stage_name, stage_content in data.get("stages", {}).items():
+                outs = stage_content.get("outs", [])
+                for out in outs:
+                    # 'out' peut être une chaîne ou un dict (ex: pour les métriques/plots)
+                    if isinstance(out, dict):
+                        out_keys = list(out.keys())
+                        if out_keys:
+                            out_str = out_keys[0]
+                        else:
+                            continue
+                    else:
+                        out_str = out
+                    
+                    # Normaliser le chemin out
+                    out_path = (repo_path / out_str).resolve()
+                    if out_path == search_path:
+                        return True
+            return False
+        except Exception as e:
+            logger.warning(f"Impossible de vérifier dvc.yaml : {e}")
+            return False
+
     def add(self, file_path: str) -> str:
         """
         Ajoute un fichier/dossier au tracking DVC.
-        Retourne le chemin du fichier .dvc créé.
+        Retourne le chemin du fichier .dvc (ou dvc.lock) créé/mis à jour.
         """
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"Fichier introuvable : {file_path}")
 
-        _run(["dvc", "add", str(path)], cwd=self.repo_path)
-        dvc_file = str(path) + ".dvc"
-        logger.info(f"Fichier tracké par DVC : {file_path} → {dvc_file}")
-        return dvc_file
+        if self._is_managed_by_dvc_yaml(file_path):
+            logger.info(f"Fichier géré par le pipeline dvc.yaml : {file_path}. Utilisation de dvc commit.")
+            _run(["dvc", "commit", "-f"], cwd=self.repo_path)
+            # Retourner 'dvc.lock' pour qu'il soit committé dans git à la place du fichier .dvc
+            return "dvc.lock"
+        else:
+            _run(["dvc", "add", str(path)], cwd=self.repo_path)
+            dvc_file = str(path) + ".dvc"
+            logger.info(f"Fichier tracké par DVC : {file_path} → {dvc_file}")
+            return dvc_file
 
     def push(self, remote: Optional[str] = None) -> None:
         """Pousse les données vers le remote storage."""
@@ -220,19 +271,32 @@ class DVCManager:
     ) -> None:
         """
         Crée un commit Git + tag DVC pour la version courante du dataset.
-        files_to_stage : liste de fichiers .dvc à ajouter au commit.
+        files_to_stage : liste de fichiers .dvc ou dvc.lock à ajouter au commit.
         """
         if message is None:
             message = f"DVC: version {version_tag} — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
 
-        # Stage les fichiers .dvc
+        # Stage les fichiers .dvc / dvc.lock
         to_stage = files_to_stage or []
         for f in to_stage:
             _run(["git", "add", f], cwd=self.repo_path)
 
-        # Commit et tag
-        _run(["git", "commit", "-m", message], cwd=self.repo_path)
-        _run(["git", "tag", "-a", version_tag, "-m", message], cwd=self.repo_path)
+        # Vérifier s'il y a des modifications à committer
+        diff_res = _run(["git", "diff", "--cached", "--name-only"], cwd=self.repo_path)
+        if diff_res.stdout.strip():
+            # Des modifs sont indexées, on peut committer
+            _run(["git", "commit", "-m", message], cwd=self.repo_path)
+        else:
+            logger.info("Aucune modification indexée à committer dans Git.")
+
+        # Vérifier si le tag existe déjà pour éviter une erreur
+        tag_check = _run(["git", "tag", "-l", version_tag], cwd=self.repo_path, check=False)
+        if tag_check.stdout.strip() == version_tag:
+            logger.warning(f"Le tag Git {version_tag} existe déjà. Mise à jour du tag.")
+            # Forcer la mise à jour du tag si nécessaire
+            _run(["git", "tag", "-f", "-a", version_tag, "-m", message], cwd=self.repo_path)
+        else:
+            _run(["git", "tag", "-a", version_tag, "-m", message], cwd=self.repo_path)
         logger.info(f"Version créée : {version_tag}")
 
     # -----------------------------------------------------------------------

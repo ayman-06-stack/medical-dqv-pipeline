@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-05-21T09:57:02.590145",
+  "gate_passed": true,
+  "summary": {
+    "pass": 4,
+    "warn": 1,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "name": "Missing Value Threshold",
+      "status": "pass",
+      "message": "Toutes les colonnes < 15% manquant (max: 0.0%)",
+      "value": 0.0,
+      "threshold": 0.15,
+      "details": {
+        "age": 0.0,
+        "sex": 0.0,
+        "bmi": 0.0,
+        "children": 0.0,
+        "smoker": 0.0,
+        "region": 0.0,
+        "charges": 0.0
+      }
+    },
+    {
+      "name": "Duplicate Record Check",
+      "status": "warn",
+      "message": "1 doublon(s) détecté(s) (0.1% du dataset)",
+      "value": 1,
+      "threshold": null,
+      "details": {
+        "duplicate_count": 1,
+        "duplicate_pct": 0.07
+      }
+    },
+    {
+      "name": "Domain/Type Validity Check",
+      "status": "pass",
+      "message": "Toutes les valeurs sont dans leur domaine valide",
+      "value": null,
+      "threshold": null,
+      "details": {}
+    },
+    {
+      "name": "Cross-Feature Consistency Check",
+      "status": "pass",
+      "message": "Toutes les règles de cohérence inter-features sont satisfaites",
+      "value": null,
+      "threshold": null,
+      "details": {}
+    },
+    {
+      "name": "Distribution Consistency Check",
+      "status": "pass",
+      "message": "Distributions statistiquement stables",
+      "value": null,
+      "threshold": null,
+      "details": {
+        "bmi": {
+          "mean": 30.663,
+          "std": 6.098,
+          "skewness": 0.284,
+          "cv": 0.199
+        },
+        "children": {
+          "mean": 1.095,
+          "std": 1.205,
+          "skewness": 0.938,
+          "cv": 1.101
+        },
+        "charges": {
+          "mean": 13270.422,
+          "std": 12110.011,
+          "skewness": 1.516,
+          "cv": 0.913
+        }
+      }
+    }
+  ]
+}

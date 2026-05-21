@@ -58,9 +58,19 @@ def _detect_phi_columns(df: pd.DataFrame) -> dict:
     Retourne un dict { 'direct': [...], 'quasi': [...] }.
     """
     cols_lower = {col: col.lower().replace(" ", "_") for col in df.columns}
+
+    def is_direct_match(col_l: str) -> bool:
+        for phi in PHI_DIRECT_IDENTIFIERS:
+            if phi == "ip":
+                if col_l == "ip" or col_l.startswith("ip_") or col_l.endswith("_ip") or "_ip_" in col_l:
+                    return True
+            elif phi in col_l:
+                return True
+        return False
+
     direct = [
         col for col, col_l in cols_lower.items()
-        if any(phi in col_l for phi in PHI_DIRECT_IDENTIFIERS)
+        if is_direct_match(col_l)
     ]
     quasi = [
         col for col, col_l in cols_lower.items()
