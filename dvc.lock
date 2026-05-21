@@ -1,0 +1,103 @@
+schema: '2.0'
+stages:
+  scrape:
+    cmd: python src/scraper.py
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: d1142a2ffd01d6f2106dd3a00b5a2571
+      size: 3971
+    - path: src/scraper.py
+      hash: md5
+      md5: bfd4177e289a3be73cf82745b4570d49
+      size: 17072
+    outs:
+    - path: data/raw/medical_raw.csv
+      hash: md5
+      md5: 9fa427cfc2f3001f343531884aca38fa
+      size: 74436
+  anonymize:
+    cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
+      from anonymizer import MedicalAnonymizer; df = 
+      pd.read_csv('data/raw/medical_raw.csv'); MedicalAnonymizer(k=3, 
+      strategy='replace', 
+      output_path='data/processed/medical_v1.0_anonymized.csv', 
+      report_path='reports/anonymization_report.json').run(df) "
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: d1142a2ffd01d6f2106dd3a00b5a2571
+      size: 3971
+    - path: data/raw/medical_raw.csv
+      hash: md5
+      md5: 9fa427cfc2f3001f343531884aca38fa
+      size: 74436
+    - path: src/anonymizer.py
+      hash: md5
+      md5: 38df705208eb1086f87329861786787f
+      size: 12605
+    outs:
+    - path: data/processed/medical_v1.0_anonymized.csv
+      hash: md5
+      md5: a9a1ac889e51d33483a66ff1d4b07dda
+      size: 71746
+    - path: reports/anonymization_report.json
+      hash: md5
+      md5: e389d1d289809f0c059fb766da67e11b
+      size: 510
+  dqv:
+    cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
+      from dqv import DataQualityVerifier, DQVConfig; df = 
+      pd.read_csv('data/processed/medical_v1.0_anonymized.csv'); gate, _ = 
+      DataQualityVerifier(DQVConfig()).run(df); sys.exit(0 if gate else 1) "
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: d1142a2ffd01d6f2106dd3a00b5a2571
+      size: 3971
+    - path: data/processed/medical_v1.0_anonymized.csv
+      hash: md5
+      md5: a9a1ac889e51d33483a66ff1d4b07dda
+      size: 71746
+    - path: src/dqv.py
+      hash: md5
+      md5: 1883d0dd1636446de152cc6955fb016a
+      size: 18681
+    outs:
+    - path: reports/dqv_report.html
+      hash: md5
+      md5: c98d358506b96569fbc36f915942add8
+      size: 6993
+    - path: reports/dqv_results.json
+      hash: md5
+      md5: cc28c432121964ef4635cf3e153fa537
+      size: 1944
+  transform:
+    cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
+      from transformer import MedicalTransformer; df = 
+      pd.read_csv('data/processed/medical_v1.0_anonymized.csv'); t = 
+      MedicalTransformer(); result = t.fit_transform(df); 
+      result.to_csv('data/processed/medical_v1.0_transformed.csv', index=False) 
+      "
+    deps:
+    - path: config.yaml
+      hash: md5
+      md5: d1142a2ffd01d6f2106dd3a00b5a2571
+      size: 3971
+    - path: data/processed/medical_v1.0_anonymized.csv
+      hash: md5
+      md5: a9a1ac889e51d33483a66ff1d4b07dda
+      size: 71746
+    - path: src/transformer.py
+      hash: md5
+      md5: a66b91c6c789fed68ae719e2adf18816
+      size: 12838
+    outs:
+    - path: data/processed/medical_v1.0_transformed.csv
+      hash: md5
+      md5: 1cbea9910f23237b90ba2b70c9a2f6ba
+      size: 320343
+    - path: data/processed/transformer_pipeline.pkl
+      hash: md5
+      md5: b8cabe4770a22032f77125a6bc54d24a
+      size: 4463
