@@ -1,5 +1,4 @@
 [core]
     remote = myremote
 ['remote "myremote"']
-    url = gdrive://1cCJ9p2y-d00QAI8mUGjfPCDNLqQZoBNt
-    gdrive_acknowledge_abuse = true
+    url = C:\Users\HP\Dropbox\dvc_storage_medical
