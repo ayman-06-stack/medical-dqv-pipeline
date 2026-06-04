@@ -265,16 +265,16 @@ st.divider()
 # SECTION 3 — Export CSV
 # ---------------------------------------------------------------------------
 
-st.subheader("⬇️ Téléchargement du dataset")
+st.subheader("⬇️ Téléchargement du dataset et rapports")
 
-col_dl1, col_dl2 = st.columns(2)
+col_dl1, col_dl2, col_dl3 = st.columns(3)
 
 with col_dl1:
     # Dataset final transformé
     csv_final = _df_to_csv_bytes(df_display)
     filename_final = f"medical_clean_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
     st.download_button(
-        label=f"⬇️ Télécharger le dataset final ({dataset_label})",
+        label=f"⬇️ Dataset final ({dataset_label})",
         data=csv_final,
         file_name=filename_final,
         mime="text/csv",
@@ -283,11 +283,26 @@ with col_dl1:
     )
 
 with col_dl2:
+    # Rapport DQV HTML
+    dqv_html_path = Path("reports/dqv_report.html")
+    if dqv_html_path.exists():
+        with open(dqv_html_path, "rb") as f:
+            st.download_button(
+                label="📄 Rapport DQV (HTML)",
+                data=f,
+                file_name="dqv_report.html",
+                mime="text/html",
+                use_container_width=True,
+            )
+    else:
+        st.button("Rapport DQV indisponible", disabled=True, use_container_width=True)
+
+with col_dl3:
     # Rapport d'anonymisation JSON
     if anon_report:
         anon_json = json.dumps(anon_report, indent=2, ensure_ascii=False, default=str)
         st.download_button(
-            label="⬇️ Télécharger rapport anonymisation (JSON)",
+            label="🔒 Rapport anonymisation (JSON)",
             data=anon_json.encode("utf-8"),
             file_name="anonymization_report.json",
             mime="application/json",
@@ -408,5 +423,74 @@ if st.session_state.version_tag:
         f"🎉 Pipeline complet ! Dataset versionné : `{st.session_state.version_tag}` "
         f"— prêt pour la modélisation ML."
     )
+
+    # --- Section téléchargement complet des rapports ---
+    st.divider()
+    st.subheader("📥 Télécharger tous les rapports du pipeline")
+    st.markdown("Le pipeline est terminé. Téléchargez l'ensemble des rapports générés :")
+
+    rpt1, rpt2, rpt3, rpt4 = st.columns(4)
+
+    with rpt1:
+        dqv_html = Path("reports/dqv_report.html")
+        if dqv_html.exists():
+            with open(dqv_html, "rb") as f:
+                st.download_button(
+                    label="📄 Rapport DQV HTML",
+                    data=f,
+                    file_name="dqv_report.html",
+                    mime="text/html",
+                    use_container_width=True,
+                    type="primary",
+                    key="final_dqv_html",
+                )
+        else:
+            st.button("DQV HTML indisponible", disabled=True, use_container_width=True, key="final_dqv_html_dis")
+
+    with rpt2:
+        dqv_json = Path("reports/dqv_results.json")
+        if dqv_json.exists():
+            with open(dqv_json, "rb") as f:
+                st.download_button(
+                    label="📊 Résultats DQV JSON",
+                    data=f,
+                    file_name="dqv_results.json",
+                    mime="application/json",
+                    use_container_width=True,
+                    key="final_dqv_json",
+                )
+        else:
+            st.button("DQV JSON indisponible", disabled=True, use_container_width=True, key="final_dqv_json_dis")
+
+    with rpt3:
+        anon_json_path = Path("reports/anonymization_report.json")
+        if anon_json_path.exists():
+            with open(anon_json_path, "rb") as f:
+                st.download_button(
+                    label="🔒 Rapport anonymisation",
+                    data=f,
+                    file_name="anonymization_report.json",
+                    mime="application/json",
+                    use_container_width=True,
+                    key="final_anon_json",
+                )
+        else:
+            st.button("Rapport anon. indisponible", disabled=True, use_container_width=True, key="final_anon_dis")
+
+    with rpt4:
+        log_path = Path("reports/pipeline.log")
+        if log_path.exists():
+            with open(log_path, "rb") as f:
+                st.download_button(
+                    label="📝 Log du pipeline",
+                    data=f,
+                    file_name="pipeline.log",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="final_log",
+                )
+        else:
+            st.button("Log indisponible", disabled=True, use_container_width=True, key="final_log_dis")
+
 else:
     st.info("📌 Créez une version DVC pour finaliser le pipeline.")

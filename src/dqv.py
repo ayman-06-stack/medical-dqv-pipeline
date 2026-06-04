@@ -42,7 +42,7 @@ except ImportError:
 class DQVConfig:
     """Seuils et paramètres de contrôle qualité."""
     missing_threshold: float = 0.15       # Max 15% valeurs manquantes par colonne
-    duplicate_tolerance: int = 0           # Zéro doublon accepté
+    duplicate_tolerance: float = 0.05      # Tolérance doublons : 5% (k-anonymity crée des doublons)
     age_min: float = 0.0
     age_max: float = 120.0
     blood_pressure_min: float = 50.0
@@ -114,6 +114,14 @@ class MissingValueChecker:
 class DuplicateChecker:
     """Vérifie la présence de doublons exacts."""
 
+    def __init__(self, tolerance: float = 0.05):
+        """
+        tolerance : pourcentage de doublons tolérés (0.05 = 5%).
+        Après k-anonymity, les lignes généralisées peuvent devenir
+        identiques — un seuil de tolérance évite les faux positifs.
+        """
+        self.tolerance = tolerance
+
     def check(self, df: pd.DataFrame) -> CheckResult:
         n_duplicates = int(df.duplicated().sum())
 
@@ -125,11 +133,23 @@ class DuplicateChecker:
                 value=0,
             )
         pct = n_duplicates / len(df) * 100
+        tolerance_pct = self.tolerance * 100
+
+        if pct <= tolerance_pct:
+            return CheckResult(
+                name="Duplicate Record Check",
+                status="pass",
+                message=f"{n_duplicates} doublon(s) détecté(s) ({pct:.1f}%) — dans la tolérance ({tolerance_pct:.0f}%)",
+                value=n_duplicates,
+                threshold=self.tolerance,
+                details={"duplicate_count": n_duplicates, "duplicate_pct": round(pct, 2)},
+            )
         return CheckResult(
             name="Duplicate Record Check",
-            status="warn" if pct < 5 else "fail",
-            message=f"{n_duplicates} doublon(s) détecté(s) ({pct:.1f}% du dataset)",
+            status="warn" if pct < 10 else "fail",
+            message=f"{n_duplicates} doublon(s) détecté(s) ({pct:.1f}%) — dépasse la tolérance ({tolerance_pct:.0f}%)",
             value=n_duplicates,
+            threshold=self.tolerance,
             details={"duplicate_count": n_duplicates, "duplicate_pct": round(pct, 2)},
         )
 
@@ -406,7 +426,7 @@ class DataQualityVerifier:
         self.config = config or DQVConfig()
         self._checkers = [
             MissingValueChecker(self.config.missing_threshold),
-            DuplicateChecker(),
+            DuplicateChecker(self.config.duplicate_tolerance),
             DomainValidityChecker(),
             CrossFeatureConsistencyChecker(),
             DistributionConsistencyChecker(self.config.distribution_drift_threshold),
