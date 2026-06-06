@@ -14,8 +14,8 @@ stages:
     outs:
     - path: data/raw/medical_raw.csv
       hash: md5
-      md5: 2bf9040f5199bb6a747517e24512724c
-      size: 24662
+      md5: 3e0fdc99c45d3b5a47b22e8de1c270ae
+      size: 27254
   anonymize:
     cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
       from anonymizer import MedicalAnonymizer; df = 
@@ -30,8 +30,8 @@ stages:
       size: 3971
     - path: data/raw/medical_raw.csv
       hash: md5
-      md5: 2bf9040f5199bb6a747517e24512724c
-      size: 24662
+      md5: 3e0fdc99c45d3b5a47b22e8de1c270ae
+      size: 27254
     - path: src/anonymizer.py
       hash: md5
       md5: 38df705208eb1086f87329861786787f
@@ -43,8 +43,8 @@ stages:
       size: 18942
     - path: reports/anonymization_report.json
       hash: md5
-      md5: 183bc2276dd7ce90c2c289107a029ca9
-      size: 593
+      md5: 19436ebfd16613dda89db7f2b265f491
+      size: 653
   dqv:
     cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
       from dqv import DataQualityVerifier, DQVConfig; df = 
@@ -61,17 +61,17 @@ stages:
       size: 18942
     - path: src/dqv.py
       hash: md5
-      md5: 1883d0dd1636446de152cc6955fb016a
-      size: 18681
+      md5: 791ca887259ea85248ded97c5b8b2d67
+      size: 19662
     outs:
     - path: reports/dqv_report.html
       hash: md5
-      md5: 3097cf2c00dfb1552ed9e504d18dd711
-      size: 6838
+      md5: 447e7298c697da49f793890391439677
+      size: 7785
     - path: reports/dqv_results.json
       hash: md5
-      md5: 5a64eb99d24613d8bc915cba4a6fd1f0
-      size: 1736
+      md5: 03fc381a2b82673056aaae9d86e688be
+      size: 3456
   transform:
     cmd: python -c " import pandas as pd; import sys; sys.path.insert(0, 'src');
       from transformer import MedicalTransformer; df = 
@@ -95,9 +95,9 @@ stages:
     outs:
     - path: data/processed/medical_v1.0_transformed.csv
       hash: md5
-      md5: 8e01eaebe483ed1a0b419b1edca362a5
-      size: 67733
+      md5: 9af84500235e4fe66a365045706798a2
+      size: 109427
     - path: data/processed/transformer_pipeline.pkl
       hash: md5
-      md5: fed76a9d4021b6a56cf9fe6a81eb1fcf
-      size: 5661
+      md5: efdfca4e380466f0043c4fed31fc0d00
+      size: 4548
