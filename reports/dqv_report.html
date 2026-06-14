@@ -22,8 +22,8 @@
 <body>
   <h1>Rapport DQV — Medical Data Pipeline</h1>
   <p class="meta">
-    Généré le 04/06/2026 à 10:59:15 |
-    Dataset : 285 lignes × 10 colonnes
+    Généré le 13/06/2026 à 16:20:51 |
+    Dataset : 767 lignes × 9 colonnes
   </p>
 
   <div class="gate" style="background:#d4edda;color:#155724">
@@ -32,11 +32,11 @@
 
   <div class="summary">
     <div class="kpi" style="background:#d4edda">
-      <div class="kpi-val" style="color:#155724">4</div>
+      <div class="kpi-val" style="color:#155724">5</div>
       <div class="kpi-label" style="color:#155724">Passed</div>
     </div>
     <div class="kpi" style="background:#fff3cd">
-      <div class="kpi-val" style="color:#856404">1</div>
+      <div class="kpi-val" style="color:#856404">0</div>
       <div class="kpi-label" style="color:#856404">Warnings</div>
     </div>
     <div class="kpi" style="background:#f8d7da">
@@ -66,40 +66,28 @@
                   </summary>
                   <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
 {
-  "no-recurrence-events": 0.0,
-  "30-39": 0.0,
-  "premeno": 0.0,
-  "30-34": 0.0,
-  "0-2": 0.0,
-  "no": 0.0,
-  "3": 0.0,
-  "left": 0.0,
-  "left_low": 0.0,
-  "no.1": 0.0
+  "6": 0.0,
+  "148": 0.0,
+  "72": 0.0,
+  "35": 0.0,
+  "0": 0.0,
+  "33.6": 0.0,
+  "0.627": 0.0,
+  "50": 0.0,
+  "1": 0.0
 }
                   </pre>
                 </details>
             </div>
-            <div style="background:#fff3cd;border-left:4px solid #856404;
+            <div style="background:#d4edda;border-left:4px solid #155724;
                         padding:14px 16px;margin-bottom:12px;border-radius:6px">
               <div style="display:flex;justify-content:space-between;align-items:center">
-                <strong style="color:#856404">⚠️ Duplicate Record Check</strong>
-                <span style="font-size:12px;background:#856404;color:white;
-                             padding:2px 8px;border-radius:4px">WARN</span>
+                <strong style="color:#155724">✅ Duplicate Record Check</strong>
+                <span style="font-size:12px;background:#155724;color:white;
+                             padding:2px 8px;border-radius:4px">PASS</span>
               </div>
-              <p style="margin:6px 0 0;color:#856404;font-size:13px">14 doublon(s) détecté(s) (4.9% du dataset)</p>
+              <p style="margin:6px 0 0;color:#155724;font-size:13px">Aucun doublon détecté</p>
               
-                <details style="margin-top:8px">
-                  <summary style="cursor:pointer;font-size:12px;color:#856404">
-                    Voir les détails
-                  </summary>
-                  <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
-{
-  "duplicate_count": 14,
-  "duplicate_pct": 4.91
-}
-                  </pre>
-                </details>
             </div>
             <div style="background:#d4edda;border-left:4px solid #155724;
                         padding:14px 16px;margin-bottom:12px;border-radius:6px">
@@ -136,11 +124,59 @@
                   </summary>
                   <pre style="font-size:11px;margin-top:6px;white-space:pre-wrap">
 {
-  "3": {
-    "mean": 2.046,
-    "std": 0.737,
-    "skewness": -0.072,
-    "cv": 0.36
+  "6": {
+    "mean": 3.842,
+    "std": 3.371,
+    "skewness": 0.904,
+    "cv": 0.877
+  },
+  "148": {
+    "mean": 120.859,
+    "std": 31.978,
+    "skewness": 0.176,
+    "cv": 0.265
+  },
+  "72": {
+    "mean": 69.102,
+    "std": 19.368,
+    "skewness": -1.842,
+    "cv": 0.28
+  },
+  "35": {
+    "mean": 20.518,
+    "std": 15.954,
+    "skewness": 0.112,
+    "cv": 0.778
+  },
+  "0": {
+    "mean": 79.904,
+    "std": 115.283,
+    "skewness": 2.271,
+    "cv": 1.443
+  },
+  "33.6": {
+    "mean": 31.99,
+    "std": 7.889,
+    "skewness": -0.428,
+    "cv": 0.247
+  },
+  "0.627": {
+    "mean": 0.472,
+    "std": 0.331,
+    "skewness": 1.921,
+    "cv": 0.703
+  },
+  "50": {
+    "mean": 33.219,
+    "std": 11.752,
+    "skewness": 1.135,
+    "cv": 0.354
+  },
+  "1": {
+    "mean": 0.348,
+    "std": 0.477,
+    "skewness": 0.639,
+    "cv": 1.369
   }
 }
                   </pre>

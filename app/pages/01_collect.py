@@ -137,10 +137,10 @@ SAMPLE_DATASETS = {
         "breast-cancer/breast-cancer.data",
         "static",
     ),
-    "Healthcare Data (GitHub CSV)": (
-        "https://raw.githubusercontent.com/stedy/Healthcare-Data/main/healthcare_data.csv",
-        "static",
-    ),
+    # "Healthcare Data (GitHub CSV)": (
+    #     "https://raw.githubusercontent.com/stedy/Healthcare-Data/main/healthcare_data.csv",
+    #     "static",
+    # ),
     "📁 Fichier CSV local…": ("", "static"),
 }
 
